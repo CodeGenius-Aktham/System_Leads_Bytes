@@ -17,22 +17,27 @@
      5. Aplicar las reglas de seguridad que están en el README
         (sección "Sincronización entre dispositivos")
 
-   Los valores de Firebase para web son públicos por diseño: la seguridad la
-   dan las reglas de Firestore, no el secreto de estas claves.
+   Los valores de Firebase para web son públicos por diseño: van en el cliente
+   de cualquier app web. La seguridad la dan las reglas de Firestore, no el
+   secreto de estas claves.
+
+   `measurementId` queda registrado por si más adelante se quiere Analytics,
+   pero el sistema NO lo inicializa: no hace falta para sincronizar y evita
+   sumar rastreo y una dependencia más.
    ========================================================================== */
 window.BYTES_SYNC_CONFIG = {
-  // Poner en true después de completar firebase
-  enabled: false,
+  enabled: true,
 
   // Colección de Firestore donde vive el estado de cada lead
   collection: 'leadStatus',
 
   firebase: {
-    apiKey: '',
-    authDomain: '',
-    projectId: '',
-    storageBucket: '',
-    messagingSenderId: '',
-    appId: ''
+    apiKey: 'AIzaSyBFWZFLWJcZb2k7WC1EROzqO6Ar3HPosws',
+    authDomain: 'bytes-leads.firebaseapp.com',
+    projectId: 'bytes-leads',
+    storageBucket: 'bytes-leads.firebasestorage.app',
+    messagingSenderId: '316421079855',
+    appId: '1:316421079855:web:36dc58fc8827ff0c96d7da',
+    measurementId: 'G-BBQZJ50GET'
   }
 };

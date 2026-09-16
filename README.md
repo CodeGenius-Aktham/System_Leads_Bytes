@@ -368,8 +368,8 @@ minutos después de un deploy. Para evitarlo, `index.html` referencia sus
 recursos con un parámetro de versión:
 
 ```html
-<link rel="stylesheet" href="styles/base.css?v=20260916d" />
-<script src="src/main.js?v=20260916d"></script>
+<link rel="stylesheet" href="styles/base.css?v=20260916e" />
+<script src="src/main.js?v=20260916e"></script>
 ```
 
 **Al publicar un cambio, subí ese identificador** (por ejemplo a `20260917a`)
