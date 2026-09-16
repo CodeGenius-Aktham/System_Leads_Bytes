@@ -118,7 +118,7 @@
               h('span', { class: 'sector-tag' }, icon('folder'), h('span', { text: sector.name })),
               h('span', { class: 'status-pill', dataset: { status: lead.status } },
                 h('span', { class: 'status-dot', dataset: { status: lead.status } }),
-                h('span', { text: status.label })
+                h('span', { text: status.label + (lead.updatedBy ? ' · ' + lead.updatedBy : '') })
               )
             )
           )
@@ -189,6 +189,8 @@
         ) : null,
 
         h('div', { class: 'detail-meta' },
+          lead.updatedBy ? h('span', { class: 'detail-meta__item' },
+            'Estado marcado por: ', h('strong', { text: lead.updatedBy })) : null,
           lead.owner ? h('span', { class: 'detail-meta__item' },
             'Responsable: ', h('strong', { text: lead.owner })) : null,
           lead.activity ? h('span', { class: 'detail-meta__item' },

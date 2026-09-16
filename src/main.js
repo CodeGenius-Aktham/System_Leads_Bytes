@@ -35,6 +35,10 @@
 
     store.subscribe(render);
 
+    // Sincronización compartida: cada mapa que llega del backend se aplica al
+    // store, que emite y re-renderiza la vista activa.
+    Bytes.sync.start(function (map) { store.applyRemote(map); });
+
     // Arranque sin ningún botón presionado ni carpeta abierta.
     render(store.getState());
 

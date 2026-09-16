@@ -9,7 +9,6 @@ window.Bytes = window.Bytes || {};
 (function (Bytes) {
   'use strict';
 
-  var STORAGE_KEY = 'bytes.leads.status.v1';
   var STATUS_IDS = Bytes.data.STATUSES.map(function (s) { return s.id; });
 
   /* ---------------------------------------------------------------- estado */
@@ -28,43 +27,50 @@ window.Bytes = window.Bytes || {};
 
   var listeners = [];
 
-  /* ----------------------------------------------------- persistencia local */
-  function loadOverrides() {
-    try {
-      var raw = window.localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch (err) {
-      // localStorage puede estar bloqueado (modo privado, file://): seguimos en memoria.
-      return {};
-    }
-  }
-
-  function saveOverrides() {
-    var map = {};
-    state.leads.forEach(function (lead) {
-      if (lead.status !== lead._initialStatus) {
-        map[lead.id] = { status: lead.status, updatedAt: lead.updatedAt };
-      }
-    });
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-    } catch (err) { /* sin persistencia: el prototipo sigue funcionando */ }
-  }
-
   /* ------------------------------------------------------------- ciclo vida */
+
+  /**
+   * Construye el set de trabajo y aplica el último estado conocido desde el
+   * caché local, para que el primer render no espere a la red. La capa de
+   * sync sobrescribe después con lo que haya en el servidor.
+   */
   function init() {
-    var overrides = loadOverrides();
     state.leads = Bytes.data.LEADS.map(function (lead) {
       var copy = Object.assign({}, lead);
       copy._initialStatus = lead.status;
-      var saved = overrides[lead.id];
-      if (saved && STATUS_IDS.indexOf(saved.status) !== -1) {
-        copy.status = saved.status;
-        copy.updatedAt = saved.updatedAt || lead.updatedAt;
-      }
+      copy.updatedBy = null;
+      copy._ts = 0;                       // marca de tiempo del último cambio conocido
       return copy;
     });
+    applyRemote(Bytes.sync.readCache(), true);
     return state;
+  }
+
+  /**
+   * Aplica los estados que llegan del backend compartido.
+   * Resolución de conflictos: gana la escritura más reciente (`ts`). Un eco
+   * remoto viejo no puede pisar un cambio local más nuevo.
+   * @param {Object} map    { leadId: {status, updatedAt, updatedBy, ts} }
+   * @param {boolean} quiet si es true no emite (se usa durante el init)
+   */
+  function applyRemote(map, quiet) {
+    if (!map) return false;
+    var changed = false;
+    state.leads.forEach(function (lead) {
+      var rec = map[lead.id];
+      if (!rec || STATUS_IDS.indexOf(rec.status) === -1) return;
+      var ts = rec.ts || 0;
+      if (ts < (lead._ts || 0)) return;                 // lo local es más nuevo
+      if (lead.status === rec.status &&
+          lead.updatedBy === (rec.updatedBy || null)) return;
+      lead.status = rec.status;
+      lead.updatedAt = rec.updatedAt || lead.updatedAt;
+      lead.updatedBy = rec.updatedBy || null;
+      lead._ts = ts;
+      changed = true;
+    });
+    if (changed && !quiet) emit();
+    return changed;
   }
 
   function subscribe(fn) {
@@ -132,15 +138,28 @@ window.Bytes = window.Bytes || {};
       emit();
     },
 
-    /** Cambio de estado en tiempo real (selector rápido y Kanban). */
+    /**
+     * Cambio de estado. Se aplica local al instante (optimista), se emite y
+     * después se publica para el resto de los dispositivos.
+     */
     setLeadStatus: function (leadId, status) {
       if (STATUS_IDS.indexOf(status) === -1) return;
       var lead = selectors.leadById(leadId);
       if (!lead || lead.status === status) return;
-      lead.status = status;
-      lead.updatedAt = new Date().toISOString().slice(0, 10);
-      saveOverrides();
+
+      var record = {
+        status: status,
+        updatedAt: new Date().toISOString().slice(0, 10),
+        updatedBy: Bytes.sync.identity() || null,
+        ts: Date.now()
+      };
+      lead.status = record.status;
+      lead.updatedAt = record.updatedAt;
+      lead.updatedBy = record.updatedBy;
+      lead._ts = record.ts;
       emit();
+
+      Bytes.sync.push(leadId, record);
     },
 
     /* --- Vista Clasificados --- */
@@ -233,8 +252,8 @@ window.Bytes = window.Bytes || {};
     init: init,
     getState: getState,
     subscribe: subscribe,
+    applyRemote: applyRemote,
     actions: actions,
-    selectors: selectors,
-    STORAGE_KEY: STORAGE_KEY
+    selectors: selectors
   };
 })(window.Bytes);

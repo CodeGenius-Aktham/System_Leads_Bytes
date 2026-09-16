@@ -39,10 +39,12 @@ System_Leads_Bytes/
 │   └── components.css              # Carpetas, filtros, lista, ficha, KPIs, Kanban
 └── src/
     ├── main.js                     # Bootstrap: init del store + suscripción de vistas
+    ├── config.js                   # Configuración de sincronización (Firebase)
     ├── data/
     │   └── leads.js                # STATUSES, SECTORS y LEADS (vacío)
     ├── store/
-    │   └── store.js                # Estado único + acciones + selectores + persistencia
+    │   ├── store.js                # Estado único + acciones + selectores
+    │   └── sync.js                 # Sincronización entre dispositivos (backend intercambiable)
     ├── utils/
     │   ├── dom.js                  # h(), icon(), mount(), delegate(), toast()
     │   └── format.js               # Enlaces WhatsApp/Maps/IG/Web, fechas, iniciales
@@ -101,17 +103,39 @@ que re-renderizar el contenido nunca deja handlers colgando.
 - `countsFor(leads)` — base de los KPIs: `total` y los 4 contadores por estado.
 - `groupByStatus(leads)` — arma las 4 columnas del Kanban.
 
-### Persistencia
+### Persistencia y sincronización
 
-Los cambios de estado de un lead se guardan en `localStorage`
-(`bytes.leads.status.v1`) y sobreviven al refresco. Sólo se persisten los leads
-cuyo estado difiere del cargado en `leads.js`. Si `localStorage` está bloqueado
-(modo privado), la app sigue funcionando en memoria.
+El estado comercial de cada lead se sincroniza por `src/store/sync.js`, que
+expone un backend intercambiable con dos operaciones:
 
-> `localStorage` es **por navegador**: los cambios de cada persona no se
-> comparten con el resto del equipo. Para uso multiusuario hay que reemplazar
-> esta capa por una API — el store es el único punto que toca los datos, la
-> interfaz no se entera.
+```js
+subscribe(onChange) -> unsubscribe   // empuja el mapa completo de estados
+write(leadId, record) -> Promise     // publica el cambio de un lead
+```
+
+Hay dos implementaciones:
+
+| Backend            | Alcance                                   | Cuándo se usa                     |
+|--------------------|-------------------------------------------|-----------------------------------|
+| `LocalBackend`     | Pestañas del **mismo** dispositivo        | Por defecto, y como caché offline |
+| `FirestoreBackend` | **Todos** los dispositivos, en tiempo real | Al configurar `src/config.js`     |
+
+Ver la sección **Sincronización entre dispositivos** para activarlo.
+
+Detalles del diseño:
+
+- **Un registro por lead**, no un documento único con todos: dos personas que
+  marcan leads distintos al mismo tiempo no se pisan.
+- **Escritura optimista**: el cambio se aplica local y se renderiza al
+  instante; después se publica. Si la red falla, el indicador de la cabecera
+  pasa a "Sin conexión" y el cambio queda guardado en el equipo.
+- **Conflictos por última escritura** (`ts` en milisegundos). Un eco remoto
+  viejo no puede pisar un cambio local más nuevo.
+- **Caché offline**: cada mapa recibido se espeja en `localStorage`, así el
+  primer render no espera a la red.
+- **Atribución**: cada cambio guarda `updatedBy`, tomado del selector "Soy"
+  de la cabecera (se guarda por dispositivo). La ficha muestra quién dejó el
+  lead en ese estado.
 
 ---
 
@@ -270,6 +294,65 @@ En cuanto un lead tenga un `sectorId`, la carpeta de ese rubro aparece sola.
 - Responsive: en móvil las carpetas se muestran primero y el tablero Kanban pasa
   a una columna.
 
+## Sincronización entre dispositivos
+
+Sin configurar, cada teléfono ve solo sus propios cambios. Para que un
+"Rechazado" marcado por una persona aparezca en todos los dispositivos:
+
+1. Crear un proyecto en <https://console.firebase.google.com>
+2. **Build › Firestore Database › Crear base de datos**
+3. **Configuración del proyecto › Tus apps › Web (`</>`)** y registrar la app
+4. Copiar los valores de `firebaseConfig` en `src/config.js` y poner
+   `enabled: true`
+5. Aplicar las reglas de seguridad (abajo) en **Firestore › Reglas**
+
+El indicador de la cabecera pasa de *"Solo este equipo"* a *"En vivo"* cuando
+la conexión queda establecida.
+
+### ⚠️ Antes de activarlo: control de acceso
+
+**El sitio es público y el repositorio también.** Con las reglas abiertas que
+Firebase sugiere por defecto, cualquiera que encuentre la URL podría leer y
+borrar el pipeline completo, con los 80 teléfonos de los prospectos adentro.
+
+Estas reglas limitan el daño —restringen la colección, los campos y los
+valores posibles— pero **no son control de acceso**:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /leadStatus/{leadId} {
+      allow read: if true;
+      allow write: if request.resource.data.keys().hasOnly(
+                        ['status', 'updatedAt', 'updatedBy', 'ts'])
+                   && request.resource.data.status in
+                        ['sin_contactar', 'contactado', 'cliente', 'rechazado']
+                   && request.resource.data.ts is int;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
+```
+
+Para un uso real conviene sumar **Authentication › Email/Password** con una
+cuenta por vendedor y cambiar las dos primeras condiciones a
+`if request.auth != null`. Eso además da una atribución confiable: hoy el
+selector "Soy" es declarativo y cualquiera puede elegir cualquier nombre.
+
+### Usar otro backend
+
+El contrato son dos funciones. Para Supabase, una API propia o cualquier otra
+cosa, se implementa `subscribe` / `write` y se inyecta:
+
+```js
+Bytes.sync.useBackend(miBackend, 'mi-modo');
+```
+
+El resto del sistema no cambia.
+
+---
+
 ## Publicar cambios (GitHub Pages)
 
 El sitio se sirve desde `main` en
@@ -281,8 +364,8 @@ minutos después de un deploy. Para evitarlo, `index.html` referencia sus
 recursos con un parámetro de versión:
 
 ```html
-<link rel="stylesheet" href="styles/base.css?v=20260916b" />
-<script src="src/main.js?v=20260916b"></script>
+<link rel="stylesheet" href="styles/base.css?v=20260916c" />
+<script src="src/main.js?v=20260916c"></script>
 ```
 
 **Al publicar un cambio, subí ese identificador** (por ejemplo a `20260917a`)
