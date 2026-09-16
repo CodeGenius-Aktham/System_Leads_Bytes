@@ -14,7 +14,7 @@ window.Bytes = window.Bytes || {};
 
   /* ---------------------------------------------------------------- estado */
   var state = {
-    view: 'leads',              // 'leads' | 'clasificados'
+    view: null,                 // null (pantalla inicial) | 'leads' | 'clasificados'
     // Vista Leads
     selectedSectorId: null,     // carpeta abierta (panel derecho, nivel 1)
     selectedLeadId: null,       // ficha abierta (reemplaza las carpetas)
@@ -51,10 +51,6 @@ window.Bytes = window.Bytes || {};
     } catch (err) { /* sin persistencia: el prototipo sigue funcionando */ }
   }
 
-  function clearOverrides() {
-    try { window.localStorage.removeItem(STORAGE_KEY); } catch (err) { /* noop */ }
-  }
-
   /* ------------------------------------------------------------- ciclo vida */
   function init() {
     var overrides = loadOverrides();
@@ -89,6 +85,12 @@ window.Bytes = window.Bytes || {};
     setView: function (view) {
       if (state.view === view) return;
       state.view = view;
+      emit();
+    },
+
+    /** Vuelve a la pantalla inicial: ningún módulo elegido, solo la marca. */
+    goHome: function () {
+      state.view = null;
       emit();
     },
 
@@ -148,15 +150,6 @@ window.Bytes = window.Bytes || {};
     },
     closeClassifiedSector: function () {
       state.classifiedSectorId = null;
-      emit();
-    },
-
-    /** Descarta los cambios locales y vuelve al set de datos de prueba. */
-    resetDemo: function () {
-      clearOverrides();
-      init();                     // reconstruye los leads desde el mock original
-      state.selectedLeadId = null;
-      state.statusFilter = 'todos';
       emit();
     }
   };

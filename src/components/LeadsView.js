@@ -61,13 +61,21 @@
       Bytes.dom.mount(leftTitle, [icon('users', 'icon--lg'), h('span', { text: sector ? 'Leads · ' + sector.name : 'Leads' })]);
 
       if (!sector) {
-        leftSubtitle.textContent = 'Elegí una carpeta de sector en el panel derecho para ver sus leads.';
+        var baseEmpty = store.selectors.globalCounts().total === 0;
+        leftSubtitle.textContent = baseEmpty
+          ? 'Todavía no hay leads cargados en el sistema.'
+          : 'Elegí una carpeta de sector en el panel derecho para ver sus leads.';
         searchWrap.classList.add('is-hidden');
         filterBar.el.classList.add('is-hidden');
         Bytes.dom.mount(leftBody, h('div', { class: 'empty-state' },
-          h('div', { class: 'empty-state__icon' }, icon('folder')),
-          h('p', { class: 'empty-state__title', text: 'Ningún sector seleccionado' }),
-          h('p', { class: 'empty-state__text', text: 'Las carpetas de la derecha agrupan los leads por rubro. Seleccioná una para trabajar sobre su lista.' })
+          h('div', { class: 'empty-state__icon' }, icon(baseEmpty ? 'inbox' : 'folder')),
+          h('p', { class: 'empty-state__title', text: baseEmpty ? 'Base de leads vacía' : 'Ningún sector seleccionado' }),
+          h('p', {
+            class: 'empty-state__text',
+            text: baseEmpty
+              ? 'Cargá los leads en src/data/leads.js y las carpetas de cada rubro aparecerán solas.'
+              : 'Las carpetas de la derecha agrupan los leads por rubro. Seleccioná una para trabajar sobre su lista.'
+          })
         ));
         return;
       }

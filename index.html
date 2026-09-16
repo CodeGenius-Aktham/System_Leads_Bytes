@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles/base.css" />
   <link rel="stylesheet" href="styles/layout.css" />
   <link rel="stylesheet" href="styles/components.css" />
@@ -17,12 +17,12 @@
   <!-- ============ HEADER GLOBAL (estático) ============ -->
   <header class="app-header" id="app-header">
     <div class="app-header__inner">
-      <a class="brand" href="#" aria-label="Bytes Technology — inicio">
-        <img class="brand__logo" src="assets/logo.svg" alt="Bytes Technology" />
-      </a>
+      <button class="brand" type="button" aria-label="Bytes Technology — volver al inicio">
+        <img class="brand__mark" src="assets/isotipo-ui.svg" alt="Bytes Technology" />
+      </button>
 
       <nav class="main-nav" aria-label="Navegación principal">
-        <button class="nav-btn is-active" type="button" data-view="leads" aria-current="page">
+        <button class="nav-btn" type="button" data-view="leads">
           <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Leads
         </button>
@@ -41,7 +41,15 @@
 
   <!-- ============ CONTENEDOR DE VISTAS ============ -->
   <main class="app-main" id="app-root">
-    <section class="view" id="view-leads" data-view="leads"></section>
+    <!-- Pantalla inicial: sin módulo elegido, solo la marca -->
+    <section class="view view--home" id="view-home" data-view="home">
+      <div class="brand-hero" role="img" aria-label="Bytes Technology">
+        <img class="brand-hero__mark" src="assets/isotipo.svg" alt="" />
+        <span class="brand-hero__word">Bytes</span>
+      </div>
+    </section>
+
+    <section class="view is-hidden" id="view-leads" data-view="leads"></section>
     <section class="view is-hidden" id="view-clasificados" data-view="clasificados"></section>
   </main>
 
@@ -52,7 +60,7 @@
   <!-- Orden de carga: utils -> data -> store -> componentes -> bootstrap -->
   <script src="src/utils/dom.js"></script>
   <script src="src/utils/format.js"></script>
-  <script src="src/data/mock-leads.js"></script>
+  <script src="src/data/leads.js"></script>
   <script src="src/store/store.js"></script>
   <script src="src/components/Header.js"></script>
   <script src="src/components/StatusFilterBar.js"></script>

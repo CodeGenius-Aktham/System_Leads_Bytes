@@ -29,14 +29,7 @@
     var backBtn = h('button', { class: 'ghost-btn', type: 'button' }, icon('arrowLeft'), h('span', { text: 'Todos los sectores' }));
     backBtn.addEventListener('click', function () { store.actions.closeClassifiedSector(); });
 
-    var resetBtn = h('button', { class: 'ghost-btn', type: 'button', title: 'Restablecer los estados al set de datos de prueba' },
-      icon('reset'), h('span', { text: 'Reiniciar demo' }));
-    resetBtn.addEventListener('click', function () {
-      store.actions.resetDemo();
-      Bytes.dom.toast('Datos de prueba restablecidos', 'reset');
-    });
-
-    var actions = h('div', { class: 'section-head__actions' }, backBtn, resetBtn);
+    var actions = h('div', { class: 'section-head__actions' }, backBtn);
     var head = h('div', { class: 'section-head' }, h('div', null, headTitle, headText), actions);
 
     /* ---------------------------- cuerpo ---------------------------- */

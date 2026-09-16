@@ -10,6 +10,10 @@
     var store = Bytes.store;
     var buttons = Array.prototype.slice.call(root.querySelectorAll('.nav-btn'));
     var totalBadge = document.getElementById('global-total');
+    var brand = root.querySelector('.brand');
+
+    // El isotipo de la cabecera devuelve a la pantalla inicial.
+    if (brand) brand.addEventListener('click', function () { store.actions.goHome(); });
 
     buttons.forEach(function (btn) {
       btn.addEventListener('click', function () {

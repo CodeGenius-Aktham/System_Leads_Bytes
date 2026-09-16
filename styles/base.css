@@ -4,12 +4,13 @@
    ========================================================================== */
 
 :root {
-  /* --- Marca --- */
-  --brand-600: #2563eb;
-  --brand-700: #1d4ed8;
-  --brand-50:  #eff6ff;
-  --brand-100: #dbeafe;
-  --accent-600: #7c3aed;
+  /* --- Marca Bytes Technology ---
+     Verde institucional tomado del logo. Un solo lugar para ajustarlo. */
+  --brand-600: #1A5C14;
+  --brand-700: #123F0C;
+  --brand-50:  #F1F7EF;
+  --brand-100: #DCEBD7;
+  --accent-600: #2E8B2E;
 
   /* --- Neutros (base blanca) --- */
   --white: #ffffff;

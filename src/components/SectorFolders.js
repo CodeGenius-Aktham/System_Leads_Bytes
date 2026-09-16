@@ -67,7 +67,8 @@
 
       var nodes = sectors.map(function (sector) { return folderCard(sector, sector.id === activeId); });
 
-      if (options.showEmptyNote) {
+      // Con la base vacía la nota listaría el catálogo entero: no aporta.
+      if (options.showEmptyNote && Bytes.store.selectors.globalCounts().total > 0) {
         var hidden = Bytes.store.selectors.emptySectors();
         if (hidden.length) {
           nodes.push(h('p', {

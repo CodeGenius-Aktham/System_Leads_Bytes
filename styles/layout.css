@@ -22,8 +22,14 @@
   align-items: center;
   gap: 28px;
 }
-.brand { display: flex; align-items: center; flex: 0 0 auto; }
-.brand__logo { height: 38px; width: auto; }
+.brand {
+  display: flex; align-items: center; flex: 0 0 auto;
+  padding: 4px; border: 0; border-radius: 10px;
+  background: transparent; cursor: pointer;
+  transition: background var(--t-fast);
+}
+.brand:hover { background: var(--brand-50); }
+.brand__mark { height: 38px; width: 38px; }
 
 /* ---------- Navegación principal ---------- */
 .main-nav {
@@ -85,6 +91,32 @@
   padding: 22px 24px 28px;
 }
 .view { animation: fade-in var(--t) both; }
+
+/* ---------- Pantalla inicial (ningún módulo elegido) ---------- */
+.view--home {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - var(--header-h) - 50px);   /* = padding de .app-main */
+}
+.brand-hero {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 3vw, 30px);
+  user-select: none;
+}
+.brand-hero__mark {
+  width: clamp(96px, 15vw, 168px);
+  height: auto;
+}
+.brand-hero__word {
+  font-size: clamp(60px, 10vw, 118px);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -.045em;
+  line-height: .9;
+  color: var(--brand-600);
+}
 @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
 /* ---------- Grilla de la vista Leads ----------
@@ -134,6 +166,9 @@
   .leads-layout { grid-template-columns: minmax(0, 1fr); }
   .panel--left, .panel--right { min-height: 0; max-height: none; position: static; }
   .panel--right { order: -1; } /* en móvil, elegir el sector primero */
+}
+@media (max-width: 560px) {
+  .brand-hero { flex-direction: column; gap: 10px; }
 }
 @media (max-width: 720px) {
   .app-header { height: auto; }

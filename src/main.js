@@ -14,6 +14,8 @@
     var leadsRoot = document.getElementById('view-leads');
     var classifiedRoot = document.getElementById('view-clasificados');
 
+    var homeRoot = document.getElementById('view-home');
+
     var views = {
       leads: { root: leadsRoot, api: Bytes.LeadsView.create(leadsRoot) },
       clasificados: { root: classifiedRoot, api: Bytes.ClassifiedView.create(classifiedRoot) }
@@ -21,6 +23,8 @@
 
     function render(state) {
       header.render(state);
+      // `view === null` -> pantalla inicial: solo la marca, sin módulo cargado.
+      homeRoot.classList.toggle('is-hidden', state.view !== null);
       Object.keys(views).forEach(function (name) {
         var view = views[name];
         var isActive = state.view === name;
@@ -31,11 +35,8 @@
 
     store.subscribe(render);
 
-    // Estado inicial: abrimos la primera carpeta con datos para que el
-    // prototipo muestre contenido desde el primer render.
-    var firstSector = store.selectors.visibleSectors()[0];
-    if (firstSector) store.actions.selectSector(firstSector.id);
-    else render(store.getState());
+    // Arranque sin ningún botón presionado ni carpeta abierta.
+    render(store.getState());
 
     // Atajo: Escape cierra la ficha o vuelve al listado de sectores.
     document.addEventListener('keydown', function (ev) {
@@ -43,6 +44,7 @@
       var state = store.getState();
       if (state.view === 'leads' && state.selectedLeadId) store.actions.closeLead();
       else if (state.view === 'clasificados' && state.classifiedSectorId) store.actions.closeClassifiedSector();
+      else if (state.view !== null) store.actions.goHome();
     });
   }
 

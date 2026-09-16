@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="64" height="64">
-  <g fill="none" stroke="#1A5C14" stroke-width="12" stroke-linecap="round">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="40" height="40" role="img" aria-label="Bytes Technology">
+  <g fill="none" stroke="#1A5C14" stroke-width="11" stroke-linecap="round">
     <path d="M183.37 89.76A84.00 84.00 0 0 0 16.63 89.76"/>
     <path d="M16.63 110.24A84.00 84.00 0 0 0 183.37 110.24"/>
     <path d="M92.20 36.48A64.00 64.00 0 0 0 92.20 163.52"/>
