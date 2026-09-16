@@ -133,6 +133,10 @@ Detalles del diseño:
   viejo no puede pisar un cambio local más nuevo.
 - **Caché offline**: cada mapa recibido se espeja en `localStorage`, así el
   primer render no espera a la red.
+- **Reconciliación al conectar**: en la primera sincronización, lo que el
+  equipo marcó sin conexión —o antes de que existiera el canal compartido— se
+  publica si el servidor no lo tiene o lo tiene más viejo. Sin esto, conectar
+  contra una base vacía borraría los cambios ya guardados en el dispositivo.
 - **Atribución**: cada cambio guarda `updatedBy`, tomado del selector "Soy"
   de la cabecera (se guarda por dispositivo). La ficha muestra quién dejó el
   lead en ese estado.
@@ -364,8 +368,8 @@ minutos después de un deploy. Para evitarlo, `index.html` referencia sus
 recursos con un parámetro de versión:
 
 ```html
-<link rel="stylesheet" href="styles/base.css?v=20260916c" />
-<script src="src/main.js?v=20260916c"></script>
+<link rel="stylesheet" href="styles/base.css?v=20260916d" />
+<script src="src/main.js?v=20260916d"></script>
 ```
 
 **Al publicar un cambio, subí ese identificador** (por ejemplo a `20260917a`)

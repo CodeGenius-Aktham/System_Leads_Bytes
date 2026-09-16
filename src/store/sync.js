@@ -126,7 +126,6 @@ window.Bytes = window.Bytes || {};
           stop = mods.onSnapshot(mods.collection(db, path), function (snap) {
             var map = {};
             snap.forEach(function (docSnap) { map[docSnap.id] = docSnap.data(); });
-            writeCache(map);          // espejo offline para el próximo arranque
             onChange(map);
             setState('live');
           }, function (err) {
@@ -166,13 +165,48 @@ window.Bytes = window.Bytes || {};
   }
 
   /**
+   * Primera sincronización: publica lo que este equipo marcó sin conexión —o
+   * antes de que existiera el canal compartido— si el servidor no lo tiene o
+   * lo tiene más viejo.
+   *
+   * Sin esto, conectar por primera vez contra una base vacía borraría los
+   * cambios que ya estaban guardados en el dispositivo.
+   *
+   * @param {Object} remote  el mapa que acaba de llegar del backend
+   * @returns {Object} el mapa reconciliado
+   */
+  function reconcile(remote) {
+    var local = readCache();
+    var merged = Object.assign({}, remote);
+    Object.keys(local).forEach(function (leadId) {
+      var mine = local[leadId];
+      var theirs = remote[leadId];
+      if (!mine || !mine.status) return;
+      if (theirs && (theirs.ts || 0) >= (mine.ts || 0)) return;   // el servidor manda
+      merged[leadId] = mine;
+      backend.write(leadId, mine);
+    });
+    return merged;
+  }
+
+  /**
    * Arranca la sincronización.
    * @param {Function} onChange  recibe el mapa { leadId: {status, updatedAt, updatedBy, ts} }
    */
   function start(onChange) {
     if (!backend) backend = create();
     if (unsubscribe) unsubscribe();
-    unsubscribe = backend.subscribe(onChange);
+
+    var first = true;
+    unsubscribe = backend.subscribe(function (remote) {
+      remote = remote || {};
+      if (first) {
+        first = false;
+        remote = reconcile(remote);
+      }
+      writeCache(remote);     // espejo offline para el próximo arranque
+      onChange(remote);
+    });
     return function () { if (unsubscribe) unsubscribe(); unsubscribe = null; };
   }
 
