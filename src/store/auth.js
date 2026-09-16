@@ -123,7 +123,14 @@ window.Bytes = window.Bytes || {};
       'auth/invalid-login-credentials': 'Correo o contraseña incorrectos.',
       'auth/too-many-requests': 'Demasiados intentos fallidos. Esperá unos minutos.',
       'auth/network-request-failed': 'Sin conexión. Revisá la red e intentá de nuevo.',
-      'auth/operation-not-allowed': 'El método email/contraseña no está habilitado en Firebase.'
+      'auth/missing-password': 'Escribí la contraseña.',
+      'auth/operation-not-allowed':
+        'El método "Correo electrónico/contraseña" no está habilitado en Firebase ' +
+        '(Authentication › Sign-in method).',
+      'auth/unauthorized-domain':
+        'Este dominio no está autorizado en Firebase. Agregalo en ' +
+        'Authentication › Settings › Dominios autorizados.',
+      'auth/internal-error': 'Firebase devolvió un error interno. Reintentá en un momento.'
     };
     if (MAP[code]) return MAP[code];
     return (err && err.message) || 'No se pudo iniciar sesión.';
