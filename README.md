@@ -240,6 +240,27 @@ En cuanto un lead tenga un `sectorId`, la carpeta de ese rubro aparece sola.
 - Responsive: en móvil las carpetas se muestran primero y el tablero Kanban pasa
   a una columna.
 
+## Publicar cambios (GitHub Pages)
+
+El sitio se sirve desde `main` en
+`https://codegenius-aktham.github.io/System_Leads_Bytes/`.
+
+GitHub Pages envía el HTML y los estáticos con `Cache-Control: max-age=600`,
+así que el navegador puede seguir mostrando la versión anterior hasta 10
+minutos después de un deploy. Para evitarlo, `index.html` referencia sus
+recursos con un parámetro de versión:
+
+```html
+<link rel="stylesheet" href="styles/base.css?v=20260916a" />
+<script src="src/main.js?v=20260916a"></script>
+```
+
+**Al publicar un cambio, subí ese identificador** (por ejemplo a `20260917a`)
+con un reemplazo global en `index.html`. Así cada deploy fuerza al navegador a
+descargar los archivos nuevos y nadie ve una versión vieja.
+
+---
+
 ## Personalización
 
 - **Marca**: `assets/isotipo.svg` es una reconstrucción vectorial del isotipo de
