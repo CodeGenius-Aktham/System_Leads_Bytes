@@ -44,12 +44,15 @@ System_Leads_Bytes/
     │   └── leads.js                # STATUSES, SECTORS y LEADS (vacío)
     ├── store/
     │   ├── store.js                # Estado único + acciones + selectores
-    │   └── sync.js                 # Sincronización entre dispositivos (backend intercambiable)
+    │   ├── firebase.js             # Carga compartida del SDK (Auth + Firestore)
+    │   ├── sync.js                 # Sincronización entre dispositivos (backend intercambiable)
+    │   └── auth.js                 # Sesión con email y contraseña
     ├── utils/
     │   ├── dom.js                  # h(), icon(), mount(), delegate(), toast()
     │   └── format.js               # Enlaces WhatsApp/Maps/IG/Web, fechas, iniciales
     └── components/
-        ├── Header.js               # Navegación principal (Leads / Clasificados)
+        ├── LoginGate.js            # Puerta de entrada: sin sesión no se muestra nada
+        ├── Header.js               # Navegación, sesión, alcance y estado del canal
         ├── LeadsView.js            # Módulo 1 — orquesta las dos columnas
         │   ├── StatusFilterBar.js  #   izquierda: 4 botones de estado + "Todos"
         │   ├── LeadList.js         #   izquierda: lista de leads del sector
@@ -93,10 +96,14 @@ que re-renderizar el contenido nunca deja handlers colgando.
 | `statusFilter`       | `'todos'` \| `'sin_contactar'` \| `'contactado'` \| `'cliente'` \| `'rechazado'` |
 | `search`             | Término de búsqueda de la columna izquierda                |
 | `classifiedSectorId` | Sector abierto en la vista Clasificados                    |
-| `leads`              | Dataset de trabajo (copia del mock + overrides locales)    |
+| `onlyMine`           | Acota todo el sistema a los leads del responsable en sesión |
+| `leads`              | Dataset de trabajo (copia de `leads.js` + estado compartido) |
 
 ### Selectores destacados
 
+- `scopedLeads()` — **único** lugar donde se aplica "Solo mis leads". Por eso el
+  filtro alcanza carpetas, listas, contadores y tablero sin tocar un solo
+  componente.
 - `visibleSectors()` — aplica la **regla de negocio**: una carpeta sólo existe si
   el rubro tiene leads registrados. Los rubros vacíos del catálogo quedan fuera.
 - `filteredLeads()` — sector + filtro de estado + búsqueda.
@@ -298,6 +305,90 @@ En cuanto un lead tenga un `sectorId`, la carpeta de ese rubro aparece sola.
 - Responsive: en móvil las carpetas se muestran primero y el tablero Kanban pasa
   a una columna.
 
+## Acceso y cuentas
+
+Con `requireAuth: true` en `src/config.js`, **el sistema no muestra nada hasta
+que haya sesión**: ni la cabecera, ni los leads, ni el DOM. El login usa
+Firebase Authentication con email y contraseña.
+
+Eso resuelve dos cosas a la vez:
+
+1. Los 80 teléfonos dejan de estar accesibles a cualquiera con la URL.
+2. La autoría de cada cambio deja de ser declarativa: `updatedBy` sale de la
+   cuenta, no de un desplegable, así que nadie puede firmar como otro.
+
+### Activarlo en Firebase
+
+1. **Authentication › Comenzar**
+2. Pestaña **Sign-in method** › habilitar **Correo electrónico/contraseña**
+3. Pestaña **Users** › **Agregar usuario**, uno por vendedor
+
+El nombre que se muestra y se sella en cada cambio se deduce de la parte local
+del correo (`jorge@… → Jorge`) y **tiene que coincidir con el campo `owner` de
+los leads** para que funcione "Solo mis leads". Si los correos no coinciden,
+usar el mapa `userNames` de `src/config.js`:
+
+```js
+userNames: {
+  'j.perez@bytestechnology.com': 'Jorge'
+}
+```
+
+### Reglas de Firestore con sesión
+
+Una vez creadas las cuentas, reemplazar las reglas por estas, que además de
+validar la forma de los datos **exigen estar autenticado**:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /leadStatus/{leadId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && request.resource.data.keys().hasOnly(
+                        ['status', 'updatedAt', 'updatedBy', 'ts'])
+                   && request.resource.data.status in
+                        ['sin_contactar', 'contactado', 'cliente', 'rechazado']
+                   && request.resource.data.ts is int;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
+```
+
+> Aplicar estas reglas **después** de crear las cuentas. Si se aplican antes,
+> nadie podrá leer ni escribir y el indicador quedará en "Sin conexión".
+
+### Al cerrar sesión
+
+Se detiene la sincronización y **se borra el caché local de leads** del
+dispositivo, para no dejar datos de clientes en un equipo compartido.
+
+### Sin Firebase configurado
+
+El sistema abre directo, sin login, en modo local — sirve para desarrollo con
+doble clic en `index.html`. En ese modo reaparece el desplegable **"Soy"** de
+la cabecera, que es declarativo y sólo alimenta la autoría.
+
+---
+
+## Solo mis leads
+
+El reparto de la investigación asigna 20 leads a cada responsable (campo
+`owner`). El interruptor **"Solo mis leads"** de la cabecera acota **todo el
+sistema** a los del responsable en sesión: carpetas, listas, buscador,
+contadores y tablero Kanban.
+
+Está implementado en un único punto —el selector `scopedLeads()`—, así que
+ningún componente sabe que existe. Si la carpeta o la ficha abiertas quedan
+fuera del alcance al activarlo, se cierran solas.
+
+El interruptor sólo aparece si hay un responsable identificado con leads
+asignados.
+
+---
+
 ## Sincronización entre dispositivos
 
 Sin configurar, cada teléfono ve solo sus propios cambios. Para que un
@@ -313,14 +404,13 @@ Sin configurar, cada teléfono ve solo sus propios cambios. Para que un
 El indicador de la cabecera pasa de *"Solo este equipo"* a *"En vivo"* cuando
 la conexión queda establecida.
 
-### ⚠️ Antes de activarlo: control de acceso
+### Reglas mínimas (mientras no haya cuentas)
 
-**El sitio es público y el repositorio también.** Con las reglas abiertas que
-Firebase sugiere por defecto, cualquiera que encuentre la URL podría leer y
-borrar el pipeline completo, con los 80 teléfonos de los prospectos adentro.
-
-Estas reglas limitan el daño —restringen la colección, los campos y los
-valores posibles— pero **no son control de acceso**:
+Si todavía no creaste las cuentas de Authentication, estas reglas dejan
+funcionar la sincronización y limitan el daño —restringen la colección, los
+campos y los valores posibles— pero **no son control de acceso**: cualquiera
+con la URL puede leer los 80 teléfonos y cambiar estados. Son un paso
+intermedio; las definitivas están en **Acceso y cuentas**.
 
 ```javascript
 rules_version = '2';
@@ -338,11 +428,6 @@ service cloud.firestore {
   }
 }
 ```
-
-Para un uso real conviene sumar **Authentication › Email/Password** con una
-cuenta por vendedor y cambiar las dos primeras condiciones a
-`if request.auth != null`. Eso además da una atribución confiable: hoy el
-selector "Soy" es declarativo y cualquiera puede elegir cualquier nombre.
 
 ### Usar otro backend
 
@@ -368,8 +453,8 @@ minutos después de un deploy. Para evitarlo, `index.html` referencia sus
 recursos con un parámetro de versión:
 
 ```html
-<link rel="stylesheet" href="styles/base.css?v=20260916e" />
-<script src="src/main.js?v=20260916e"></script>
+<link rel="stylesheet" href="styles/base.css?v=20260916f" />
+<script src="src/main.js?v=20260916f"></script>
 ```
 
 **Al publicar un cambio, subí ese identificador** (por ejemplo a `20260917a`)

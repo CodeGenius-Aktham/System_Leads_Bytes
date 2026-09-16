@@ -419,6 +419,68 @@
 .kanban-card__date { font-size: 10.5px; color: var(--ink-400); }
 
 /* ==========================================================================
+   7b. Puerta de entrada (login)
+   ========================================================================== */
+.login {
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-items: center;
+  padding: 24px;
+  background: var(--white);
+}
+.login__card {
+  width: 100%; max-width: 372px;
+  padding: 30px 28px 26px;
+  border: 1px solid var(--line-200); border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  background: var(--white);
+}
+.login__brand { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.login__mark { width: 46px; height: 46px; }
+.login__word {
+  font-size: 34px; font-weight: 900; font-style: italic;
+  letter-spacing: -.045em; line-height: .9; color: var(--brand-600);
+}
+.login__intro {
+  margin-top: 14px; text-align: center;
+  font-size: 12.5px; color: var(--ink-500); line-height: 1.5;
+}
+.login__form { margin-top: 22px; display: flex; flex-direction: column; }
+.login__label {
+  margin-bottom: 6px;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .9px;
+  text-transform: uppercase; color: var(--ink-400);
+}
+.login__input {
+  margin-bottom: 15px; padding: 11px 13px;
+  border: 1px solid var(--line-300); border-radius: 10px;
+  background: var(--white); color: var(--ink-900);
+  font: inherit; font-size: 14px;
+}
+.login__input::placeholder { color: var(--ink-400); }
+.login__input:focus { outline: none; border-color: var(--brand-600); box-shadow: var(--ring); }
+.login__input:disabled { background: var(--paper); color: var(--ink-400); }
+.login__submit {
+  margin-top: 4px; padding: 12px 16px;
+  border: 0; border-radius: 10px;
+  background: var(--brand-600); color: #fff;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: background var(--t-fast);
+}
+.login__submit:hover:not(:disabled) { background: var(--brand-700); }
+.login__submit:disabled { opacity: .6; cursor: default; }
+.login__error {
+  margin-bottom: 12px; padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--st-red);
+  background: var(--st-red-bg); color: var(--st-red-ink);
+  font-size: 12.5px; line-height: 1.45;
+}
+.login__hint {
+  margin-top: 16px; text-align: center;
+  font-size: 11.5px; color: var(--ink-400); line-height: 1.5;
+}
+
+/* ==========================================================================
    8. Estados vacíos, toasts y utilidades
    ========================================================================== */
 .empty-state {

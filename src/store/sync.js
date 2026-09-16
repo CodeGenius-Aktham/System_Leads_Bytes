@@ -45,9 +45,19 @@ window.Bytes = window.Bytes || {};
     catch (err) { /* sin caché: la app sigue funcionando en memoria */ }
   }
 
-  /** Identidad del operador: se adjunta a cada cambio para saber quién lo hizo. */
+  /**
+   * Quién firma los cambios.
+   *
+   * Con sesión iniciada sale de la cuenta y no se puede falsear. Sin Firebase
+   * (modo local) cae al desplegable "Soy" de la cabecera, que es declarativo.
+   */
   function identity(name) {
     if (name === undefined) {
+      if (Bytes.auth) {
+        var session = Bytes.auth.getState();
+        if (session.name) return session.name;
+        if (Bytes.firebase && Bytes.firebase.requiresAuth()) return '';
+      }
       try { return window.localStorage.getItem(USER_KEY) || ''; }
       catch (err) { return ''; }
     }
@@ -108,13 +118,10 @@ window.Bytes = window.Bytes || {};
     var db = null;
     var path = config.collection || 'leadStatus';
 
-    // El SDK se carga sólo si la sincronización está activada.
-    var ready = Promise.all([
-      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
-    ]).then(function (loaded) {
-      mods = loaded[1];
-      db = mods.getFirestore(loaded[0].initializeApp(config.firebase));
+    // Instancia compartida con Auth: ver src/store/firebase.js
+    var ready = Bytes.firebase.load().then(function (p) {
+      mods = p.fs;
+      db = p.db;
     });
 
     return {
@@ -155,10 +162,9 @@ window.Bytes = window.Bytes || {};
 
   /** Elige el backend según src/config.js. */
   function create() {
-    var cfg = window.BYTES_SYNC_CONFIG || {};
-    if (cfg.enabled && cfg.firebase && cfg.firebase.projectId) {
+    if (Bytes.firebase.isEnabled()) {
       current.mode = 'firestore';
-      return FirestoreBackend(cfg);
+      return FirestoreBackend(window.BYTES_SYNC_CONFIG || {});
     }
     current.mode = 'local';
     return LocalBackend();
@@ -216,6 +222,14 @@ window.Bytes = window.Bytes || {};
     return backend.write(leadId, record);
   }
 
+  /** Corta la suscripción y olvida el backend (se usa al cerrar sesión). */
+  function stop() {
+    if (unsubscribe) unsubscribe();
+    unsubscribe = null;
+    backend = null;
+    setState('idle');
+  }
+
   /** Inyecta un backend propio (lo usan las pruebas y un backend alternativo). */
   function useBackend(custom, mode) {
     backend = custom;
@@ -225,6 +239,7 @@ window.Bytes = window.Bytes || {};
 
   Bytes.sync = {
     start: start,
+    stop: stop,
     push: push,
     identity: identity,
     onStatus: onStatus,

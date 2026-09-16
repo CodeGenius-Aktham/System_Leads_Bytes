@@ -35,9 +35,45 @@
 
     store.subscribe(render);
 
-    // Sincronización compartida: cada mapa que llega del backend se aplica al
-    // store, que emite y re-renderiza la vista activa.
-    Bytes.sync.start(function (map) { store.applyRemote(map); });
+    /* ------------------------- Puerta de entrada -------------------------
+       Con Firebase configurado, nada se muestra ni se sincroniza hasta que
+       haya sesión. Sin configurar, el sistema abre directo en modo local. */
+    var gate = Bytes.LoginGate.create(document.body);
+    var shell = [document.getElementById('app-header'), document.getElementById('app-root')];
+    var syncing = false;
+
+    function startSync() {
+      if (syncing) return;
+      syncing = true;
+      // Cada mapa que llega del backend se aplica al store, que emite y
+      // re-renderiza la vista activa.
+      Bytes.sync.start(function (map) { store.applyRemote(map); });
+    }
+
+    function showShell(on) {
+      shell.forEach(function (node) { if (node) node.classList.toggle('is-hidden', !on); });
+    }
+
+    if (Bytes.firebase.requiresAuth()) {
+      Bytes.auth.onUser(function (session) {
+        gate.render(session);
+        showShell(!!session.user);
+        if (session.user) {
+          startSync();
+          render(store.getState());     // refresca cabecera con la sesión
+        } else {
+          syncing = false;
+          store.actions.goHome();       // al volver, se arranca desde la marca
+          if (session.ready && !session.error) gate.focus();
+        }
+      });
+      Bytes.auth.start();
+    } else {
+      gate.render({ ready: true, user: null, name: '', error: null });
+      gate.el.classList.add('is-hidden');
+      showShell(true);
+      startSync();
+    }
 
     // Arranque sin ningún botón presionado ni carpeta abierta.
     render(store.getState());

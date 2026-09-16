@@ -21,6 +21,8 @@ window.Bytes = window.Bytes || {};
     search: '',
     // Vista Clasificados
     classifiedSectorId: null,
+    // Alcance: true = solo los leads asignados a quien está operando
+    onlyMine: false,
     // Datos
     leads: []
   };
@@ -88,6 +90,13 @@ window.Bytes = window.Bytes || {};
 
   /* ---------------------------------------------------------------- acciones */
   var actions = {
+    /**
+     * Re-emite sin cambiar el estado. Lo usan las entradas que viven fuera
+     * del store —la identidad del operador, la sesión— para que la interfaz
+     * recalcule lo que depende de ellas.
+     */
+    refresh: function () { emit(); },
+
     setView: function (view) {
       if (state.view === view) return;
       state.view = view;
@@ -139,6 +148,31 @@ window.Bytes = window.Bytes || {};
     },
 
     /**
+     * Acota todo el sistema a los leads del responsable que está operando.
+     * Al ser un solo punto —`scopedLeads()`— alcanza a carpetas, listas,
+     * contadores y tablero sin tocar ningún componente.
+     */
+    setOnlyMine: function (value) {
+      var next = !!value;
+      if (state.onlyMine === next) return;
+      state.onlyMine = next;
+      // Si la carpeta o la ficha abiertas se quedan fuera del alcance, se cierran.
+      if (state.selectedLeadId) {
+        var lead = selectors.leadById(state.selectedLeadId);
+        if (!lead || !selectors.inScope(lead)) state.selectedLeadId = null;
+      }
+      if (state.selectedSectorId &&
+          !selectors.leadsBySector(state.selectedSectorId).length) {
+        state.selectedSectorId = null;
+      }
+      if (state.classifiedSectorId &&
+          !selectors.leadsBySector(state.classifiedSectorId).length) {
+        state.classifiedSectorId = null;
+      }
+      emit();
+    },
+
+    /**
      * Cambio de estado. Se aplica local al instante (optimista), se emite y
      * después se publica para el resto de los dispositivos.
      */
@@ -179,12 +213,40 @@ window.Bytes = window.Bytes || {};
       return state.leads.filter(function (l) { return l.id === leadId; })[0] || null;
     },
 
+    /** Responsable que está operando, si hay sesión o identidad elegida. */
+    currentOwner: function () {
+      return Bytes.sync.identity() || '';
+    },
+
+    /** ¿Este lead entra en el alcance actual? */
+    inScope: function (lead) {
+      if (!state.onlyMine) return true;
+      var me = selectors.currentOwner();
+      return !me || lead.owner === me;
+    },
+
+    /**
+     * Conjunto de leads sobre el que trabaja TODO el sistema.
+     * Único lugar donde se aplica el alcance "solo mis leads".
+     */
+    scopedLeads: function () {
+      if (!state.onlyMine) return state.leads;
+      return state.leads.filter(selectors.inScope);
+    },
+
+    /** ¿Tiene sentido ofrecer el filtro? Sólo si hay responsable identificado. */
+    canFilterMine: function () {
+      var me = selectors.currentOwner();
+      if (!me) return false;
+      return state.leads.some(function (l) { return l.owner === me; });
+    },
+
     sectorById: function (sectorId) {
       return Bytes.data.SECTORS.filter(function (s) { return s.id === sectorId; })[0] || null;
     },
 
     leadsBySector: function (sectorId) {
-      return state.leads.filter(function (l) { return l.sectorId === sectorId; });
+      return selectors.scopedLeads().filter(function (l) { return l.sectorId === sectorId; });
     },
 
     /**
@@ -218,7 +280,7 @@ window.Bytes = window.Bytes || {};
       return counts;
     },
 
-    globalCounts: function () { return selectors.countsFor(state.leads); },
+    globalCounts: function () { return selectors.countsFor(selectors.scopedLeads()); },
 
     /** Lista visible en la columna izquierda: sector + filtro de estado + búsqueda. */
     filteredLeads: function () {

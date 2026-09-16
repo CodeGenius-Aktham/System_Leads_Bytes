@@ -28,8 +28,24 @@
 window.BYTES_SYNC_CONFIG = {
   enabled: true,
 
+  // Exige iniciar sesión para ver el sistema. Ponerlo en false deja la base
+  // de 80 prospectos accesible a cualquiera que tenga la URL.
+  requireAuth: true,
+
   // Colección de Firestore donde vive el estado de cada lead
   collection: 'leadStatus',
+
+  /**
+   * Nombre de cada cuenta, para que coincida con el campo `owner` de los
+   * leads y funcione el filtro "Solo mis leads".
+   *
+   * Si se omite, el nombre se deduce de la parte local del correo
+   * (jorge@… -> "Jorge"), que suele alcanzar. Completar sólo cuando el
+   * correo no coincide con el nombre del responsable.
+   */
+  userNames: {
+    // 'jorge.perez@bytestechnology.com': 'Jorge'
+  },
 
   firebase: {
     apiKey: 'AIzaSyBFWZFLWJcZb2k7WC1EROzqO6Ar3HPosws',
