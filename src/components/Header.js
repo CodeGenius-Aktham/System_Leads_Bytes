@@ -10,6 +10,7 @@
     var store = Bytes.store;
     var buttons = Array.prototype.slice.call(root.querySelectorAll('.nav-btn'));
     var totalBadge = document.getElementById('global-total');
+    var meta = root.querySelector('.header-meta');
     var brand = root.querySelector('.brand');
 
     // El isotipo de la cabecera devuelve a la pantalla inicial.
@@ -28,6 +29,8 @@
         if (active) btn.setAttribute('aria-current', 'page');
         else btn.removeAttribute('aria-current');
       });
+      // En la pantalla inicial no se muestra nada más que la marca.
+      if (meta) meta.classList.toggle('is-hidden', state.view === null);
       if (totalBadge) totalBadge.textContent = String(store.selectors.globalCounts().total);
     }
 
