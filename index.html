@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bytes Technology · Sistema de Leads</title>
+  <meta name="description" content="Sistema de organización y clasificación de leads por sector y estado comercial — Bytes Technology." />
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/layout.css" />
+  <link rel="stylesheet" href="styles/components.css" />
+</head>
+<body>
+  <!-- ============ HEADER GLOBAL (estático) ============ -->
+  <header class="app-header" id="app-header">
+    <div class="app-header__inner">
+      <a class="brand" href="#" aria-label="Bytes Technology — inicio">
+        <img class="brand__logo" src="assets/logo.svg" alt="Bytes Technology" />
+      </a>
+
+      <nav class="main-nav" aria-label="Navegación principal">
+        <button class="nav-btn is-active" type="button" data-view="leads" aria-current="page">
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Leads
+        </button>
+        <button class="nav-btn" type="button" data-view="clasificados">
+          <svg viewBox="0 0 24 24" class="icon" aria-hidden="true"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+          Clasificados
+        </button>
+      </nav>
+
+      <div class="header-meta">
+        <span class="header-meta__badge" id="global-total">—</span>
+        <span class="header-meta__label">leads en base</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ CONTENEDOR DE VISTAS ============ -->
+  <main class="app-main" id="app-root">
+    <section class="view" id="view-leads" data-view="leads"></section>
+    <section class="view is-hidden" id="view-clasificados" data-view="clasificados"></section>
+  </main>
+
+  <!-- ============ TOASTS ============ -->
+  <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ============ CAPA DE APLICACIÓN ============ -->
+  <!-- Orden de carga: utils -> data -> store -> componentes -> bootstrap -->
+  <script src="src/utils/dom.js"></script>
+  <script src="src/utils/format.js"></script>
+  <script src="src/data/mock-leads.js"></script>
+  <script src="src/store/store.js"></script>
+  <script src="src/components/Header.js"></script>
+  <script src="src/components/StatusFilterBar.js"></script>
+  <script src="src/components/SectorFolders.js"></script>
+  <script src="src/components/LeadList.js"></script>
+  <script src="src/components/LeadDetail.js"></script>
+  <script src="src/components/LeadsView.js"></script>
+  <script src="src/components/KpiPanel.js"></script>
+  <script src="src/components/KanbanBoard.js"></script>
+  <script src="src/components/ClassifiedView.js"></script>
+  <script src="src/main.js"></script>
+</body>
+</html>
