@@ -23,15 +23,17 @@ window.Bytes = window.Bytes || {};
   function digitsOnly(phone) { return String(phone || '').replace(/\D/g, ''); }
 
   /**
-   * Enlace de WhatsApp con el mensaje predefinido del sistema.
-   * Mensaje: "Hola! Hablo con [Nombre del negocio/empresa]"
+   * Mensaje con el que se abre la conversación de WhatsApp.
+   * Si la investigación trajo un mensaje redactado para ese prospecto se usa
+   * ese; si no, el genérico del sistema: "Hola! Hablo con [negocio]".
    */
-  function waMessage(businessName) {
-    return 'Hola! Hablo con ' + businessName;
+  function waMessage(lead) {
+    if (lead.message) return lead.message;
+    return 'Hola! Hablo con ' + lead.name;
   }
   function waLink(lead) {
     var phone = digitsOnly(lead.phone);
-    return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(waMessage(lead.name));
+    return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(waMessage(lead));
   }
 
   /** Enlace a Google Maps: usa la URL guardada o construye una búsqueda. */
@@ -59,10 +61,15 @@ window.Bytes = window.Bytes || {};
     return String(url || '').replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '');
   }
 
-  /** Handle legible de Instagram. */
+  /**
+   * Handle legible de Instagram. Algunos registros del origen traen una ruta
+   * (ej. `p/Ch3AB6rp0MY`, un post) en vez de un usuario: en ese caso se
+   * muestra tal cual, sin el arroba.
+   */
   function prettyHandle(instagram) {
     if (!instagram) return '';
     var raw = String(instagram).replace(/^https?:\/\/(www\.)?instagram\.com\//i, '').replace(/\/$/, '');
+    if (raw.indexOf('/') !== -1) return raw;
     return '@' + raw.replace(/^@/, '');
   }
 

@@ -33,7 +33,7 @@
     /* --- Copiar teléfono --- */
     Bytes.dom.delegate(el, 'click', '.copy-btn', function (ev, btn) {
       var value = btn.dataset.value;
-      var done = function () { Bytes.dom.toast('Teléfono copiado', 'copy'); };
+      var done = function () { Bytes.dom.toast('Copiado al portapapeles', 'copy'); };
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(value).then(done, function () { fallbackCopy(value, done); });
       } else {
@@ -145,8 +145,8 @@
           h('div', { class: 'action-grid' },
             actionButton({
               ch: 'wa', icon: 'whatsapp', label: 'WhatsApp',
-              sub: '“' + fmt.waMessage(lead.name) + '”',
-              title: 'Abrir chat con el mensaje predefinido',
+              sub: lead.message ? 'Mensaje de inicio listo' : 'Mensaje genérico',
+              title: fmt.waMessage(lead),
               href: fmt.waLink(lead)
             }),
             actionButton({
@@ -173,6 +173,15 @@
           statusSwitch(lead)
         ),
 
+        /* ---------- Mensaje de inicio (el que abre WhatsApp) ---------- */
+        lead.message ? h('div', { class: 'detail-block' },
+          h('span', { class: 'detail-block__label', text: 'Mensaje de inicio' }),
+          h('p', { class: 'detail-note', text: lead.message }),
+          h('button', { class: 'copy-btn', type: 'button', style: { marginTop: '9px' }, dataset: { value: lead.message } },
+            icon('copy'), h('span', { text: 'Copiar mensaje' })
+          )
+        ) : null,
+
         /* ---------- Notas de la investigación ---------- */
         lead.note ? h('div', { class: 'detail-block' },
           h('span', { class: 'detail-block__label', text: 'Notas de la investigación' }),
@@ -180,8 +189,14 @@
         ) : null,
 
         h('div', { class: 'detail-meta' },
-          h('span', { class: 'detail-meta__item', html: 'Última actualización: <strong>' + fmt.shortDate(lead.updatedAt) + '</strong>' }),
-          h('span', { class: 'detail-meta__item', html: 'ID interno: <strong>' + lead.id + '</strong>' })
+          lead.owner ? h('span', { class: 'detail-meta__item' },
+            'Responsable: ', h('strong', { text: lead.owner })) : null,
+          lead.activity ? h('span', { class: 'detail-meta__item' },
+            'Actividad: ', h('strong', { text: lead.activity })) : null,
+          h('span', { class: 'detail-meta__item' },
+            'Última actualización: ', h('strong', { text: fmt.shortDate(lead.updatedAt) })),
+          h('span', { class: 'detail-meta__item' },
+            'ID interno: ', h('strong', { text: lead.id }))
         )
       ]);
     }

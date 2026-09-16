@@ -3,7 +3,8 @@
 Sistema de organización de leads para **Bytes Technology**. Aplicación web
 funcional (HTML + CSS + JavaScript vanilla, sin build ni dependencias).
 
-La base de leads arranca **vacía**: se cargan en `src/data/leads.js`.
+Base cargada con **80 prospectos** (`src/data/leads.js`), provenientes de la
+investigación de rubros de `prospectos.pdf`.
 
 ## Cómo ejecutarlo
 
@@ -146,8 +147,10 @@ Dos columnas, según la especificación:
 - Nombre del negocio, rubro y píldora de estado.
 - Teléfono con dirección y botón de copiado.
 - **Botonera de acción rápida:**
-  - **WhatsApp** → `https://wa.me/<tel>?text=Hola!%20Hablo%20con%20<Negocio>`,
-    es decir el mensaje predefinido `Hola! Hablo con [Nombre del negocio]`.
+  - **WhatsApp** → abre el chat con el **mensaje de inicio** redactado para
+    ese prospecto (campo `message`). Si un lead no lo tiene, cae al genérico
+    `Hola! Hablo con [Nombre del negocio]`. El mensaje completo se muestra en
+    la ficha, con botón para copiarlo, antes de abrir la conversación.
   - **Google Maps** → URL guardada del lead, o búsqueda por nombre + dirección.
   - **Instagram** → perfil del negocio; si no tiene, el botón queda inactivo.
   - **Sitio Web** → su página. Si no posee, el botón se muestra deshabilitado
@@ -194,16 +197,43 @@ store, por lo que cambiar un estado actualiza los contadores al instante.
 
 ---
 
-## Cargar datos
+## Datos cargados
 
-`src/data/leads.js` expone dos estructuras:
+`src/data/leads.js` expone `STATUSES`, `SECTORS` y `LEADS`. Esta capa simula la
+respuesta de la API: sustituirla por un `fetch` no requiere tocar la interfaz.
 
-- **`SECTORS`** — catálogo de rubros con los que opera la empresa (configuración,
-  no datos de leads). Viene poblado; editalo según necesites.
-- **`LEADS`** — los leads registrados. **Actualmente vacío** (`[]`).
+**80 prospectos** cargados desde `prospectos.pdf`, todos en estado
+`sin_contactar` y todos sin página web — que es justamente la premisa comercial
+de la investigación.
 
-Esta capa simula la respuesta de la API: sustituirla por un `fetch` no requiere
-tocar la interfaz.
+| Rubro                    | Leads | Actividades del origen                                          |
+|--------------------------|------:|-----------------------------------------------------------------|
+| Estudios de tatuajes     |    42 | Estudio de tatuajes · Tienda de piercings y tatuajes · Tatuador |
+| Barberías                |    25 | Barbería                                                        |
+| Estética y peluquería    |     6 | Centro de estética · Peluquería · Spa de uñas                   |
+| Manicura y uñas          |     6 | Salón de manicura y pedicura · Spa/Manicura                     |
+| Pastelería y repostería  |     1 | Pastelería/Repostería                                           |
+
+Reparto por responsable: **Jesus 20 · Moises 20 · Jorge 20 · Thiago 20**.
+Países: Colombia (49, `+57`) y Venezuela (31, `+58`).
+
+Tres campos propios de esta carga se suman a la forma base del lead:
+
+| Campo      | Uso                                                                  |
+|------------|----------------------------------------------------------------------|
+| `owner`    | Responsable asignado en la investigación                             |
+| `activity` | Actividad textual del negocio, tal como figura en el origen          |
+| `message`  | Mensaje de inicio redactado para ese prospecto; lo usa el botón de WhatsApp |
+
+### Calidad de los datos
+
+Un registro llegó con datos incompletos desde el origen y se cargó **tal cual**,
+sin inventar nada:
+
+- **Inked Tatto Studio** (Bucaramanga): en la columna de Instagram trae un post
+  (`post/Ch3AB6rp0MY`) en lugar de un usuario, y el teléfono `+57 76945564`
+  tiene 10 dígitos en vez de los 12 habituales de un móvil colombiano, así que
+  el enlace de WhatsApp probablemente no funcione. Conviene verificarlo.
 
 ```js
 // forma de cada lead
@@ -251,8 +281,8 @@ minutos después de un deploy. Para evitarlo, `index.html` referencia sus
 recursos con un parámetro de versión:
 
 ```html
-<link rel="stylesheet" href="styles/base.css?v=20260916a" />
-<script src="src/main.js?v=20260916a"></script>
+<link rel="stylesheet" href="styles/base.css?v=20260916b" />
+<script src="src/main.js?v=20260916b"></script>
 ```
 
 **Al publicar un cambio, subí ese identificador** (por ejemplo a `20260917a`)
