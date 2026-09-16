@@ -1,0 +1,79 @@
+// ==========================================================================
+// REGLAS DEFINITIVAS — Sistema de leads, Bytes Technology
+//
+// Qué garantizan:
+//   · Sin sesión no se lee ni se escribe nada.
+//   · Cada responsable solo cambia el estado de SUS leads, según la
+//     asignación de `leadOwners` (sembrada una vez y luego inmutable).
+//   · Las cuentas de `admins()` pueden editar los 80.
+//   · Nadie puede borrar documentos ni crear colecciones nuevas.
+//   · Solo se aceptan los 4 estados válidos y los 4 campos esperados.
+//
+// ANTES DE PUBLICAR:
+//   1. Completar el mapa de nombres() con los correos reales. El nombre
+//      debe coincidir EXACTO con el campo `owner` de los leads
+//      (Jesus, Moises, Jorge, Thiago).
+//   2. Completar admins() con los correos de supervisión, y que coincidan
+//      con la lista `admins` de src/config.js.
+//   3. Haber sembrado `leadOwners`. Si falta la asignación de un lead, el
+//      get() falla y ese lead queda sin poder editarse.
+// ==========================================================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Correo de la cuenta -> nombre del responsable ---
+    function nombre() {
+      return {
+        'jesus@bytestechnology.com':  'Jesus',
+        'moises@bytestechnology.com': 'Moises',
+        'jorge@bytestechnology.com':  'Jorge',
+        'thiago@bytestechnology.com': 'Thiago'
+      }.get(request.auth.token.email, '');
+    }
+
+    // --- Cuentas con acceso total ---
+    function admins() {
+      return [
+        // 'tucorreo@gmail.com'
+      ];
+    }
+    function esAdmin() {
+      return request.auth.token.email in admins();
+    }
+
+    // --- Responsable asignado a un lead, según la siembra ---
+    function duenoDe(leadId) {
+      return get(/databases/$(database)/documents/leadOwners/$(leadId)).data.owner;
+    }
+
+    // --- Forma de un cambio de estado válido ---
+    function formaValida() {
+      return request.resource.data.keys().hasOnly(
+                  ['status', 'updatedAt', 'updatedBy', 'ts'])
+             && request.resource.data.status in
+                  ['sin_contactar', 'contactado', 'cliente', 'rechazado']
+             && request.resource.data.ts is int
+             && request.resource.data.updatedAt is string;
+    }
+
+    // Asignaciones: se leen para decidir permisos, no se tocan desde la app.
+    match /leadOwners/{leadId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Estado comercial de cada lead.
+    match /leadStatus/{leadId} {
+      allow read: if request.auth != null;
+
+      allow create, update: if request.auth != null
+                            && formaValida()
+                            && (esAdmin() || duenoDe(leadId) == nombre());
+
+      allow delete: if false;
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}

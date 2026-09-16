@@ -36,6 +36,25 @@ window.BYTES_SYNC_CONFIG = {
   collection: 'leadStatus',
 
   /**
+   * Cada responsable sólo puede cambiar el estado de SUS leads.
+   *
+   * La interfaz lo respeta para que nadie choque contra un error, pero la
+   * regla que realmente manda es la de Firestore (ver README). Poner en
+   * false deja que cualquiera con sesión toque cualquier lead.
+   */
+  enforceOwnership: true,
+
+  /**
+   * Cuentas con acceso total: ven y editan los 80 leads.
+   * Pensado para quien supervisa. Debe coincidir con la lista `admins` de
+   * las reglas de Firestore, o la interfaz permitirá algo que el servidor
+   * después rechace.
+   */
+  admins: [
+    // 'tucorreo@gmail.com'
+  ],
+
+  /**
    * Nombre de cada cuenta, para que coincida con el campo `owner` de los
    * leads y funcione el filtro "Solo mis leads".
    *

@@ -28,6 +28,7 @@ window.Bytes = window.Bytes || {};
   };
 
   var listeners = [];
+  var errorListeners = [];
 
   /* ------------------------------------------------------------- ciclo vida */
 
@@ -87,6 +88,17 @@ window.Bytes = window.Bytes || {};
   }
 
   function getState() { return state; }
+
+  /** Avisos que la interfaz muestra al usuario (rechazos del servidor, etc.). */
+  function onError(fn) {
+    errorListeners.push(fn);
+    return function () {
+      errorListeners = errorListeners.filter(function (l) { return l !== fn; });
+    };
+  }
+  function notify(message) {
+    errorListeners.forEach(function (fn) { fn(message); });
+  }
 
   /* ---------------------------------------------------------------- acciones */
   var actions = {
@@ -181,6 +193,20 @@ window.Bytes = window.Bytes || {};
       var lead = selectors.leadById(leadId);
       if (!lead || lead.status === status) return;
 
+      if (!selectors.canEdit(lead)) {
+        notify('Este lead está asignado a ' + (lead.owner || 'otra persona') +
+               '. Solo ' + (lead.owner || 'quien lo tenga asignado') + ' puede cambiar su estado.');
+        return;
+      }
+
+      // Se guarda el estado anterior para poder volver atrás si el servidor
+      // rechaza la escritura: sin esto la pantalla mostraría algo que no se
+      // guardó, porque el eco remoto es más viejo y no la corrige.
+      var previous = {
+        status: lead.status, updatedAt: lead.updatedAt,
+        updatedBy: lead.updatedBy, _ts: lead._ts
+      };
+
       var record = {
         status: status,
         updatedAt: new Date().toISOString().slice(0, 10),
@@ -193,7 +219,19 @@ window.Bytes = window.Bytes || {};
       lead._ts = record.ts;
       emit();
 
-      Bytes.sync.push(leadId, record);
+      var pushed = Bytes.sync.push(leadId, record);
+      if (pushed && pushed.catch) {
+        pushed.catch(function (err) {
+          lead.status = previous.status;
+          lead.updatedAt = previous.updatedAt;
+          lead.updatedBy = previous.updatedBy;
+          lead._ts = previous._ts;
+          emit();
+          var motivo = String((err && err.message) || 'el servidor lo rechazó')
+                         .replace(/\.+$/, '');
+          notify('El cambio no se guardó: ' + motivo + '.');
+        });
+      }
     },
 
     /* --- Vista Clasificados --- */
@@ -216,6 +254,27 @@ window.Bytes = window.Bytes || {};
     /** Responsable que está operando, si hay sesión o identidad elegida. */
     currentOwner: function () {
       return Bytes.sync.identity() || '';
+    },
+
+    /** Cuenta con acceso total (supervisión). */
+    isAdmin: function () {
+      var cfg = window.BYTES_SYNC_CONFIG || {};
+      var admins = cfg.admins || [];
+      if (!admins.length) return false;
+      var session = Bytes.auth ? Bytes.auth.getState() : null;
+      var email = session && session.user && session.user.email;
+      return !!email && admins.indexOf(email.toLowerCase()) !== -1;
+    },
+
+    /**
+     * ¿Quien está operando puede cambiar el estado de este lead?
+     * Sin Firebase o con `enforceOwnership: false`, todos pueden todo.
+     */
+    canEdit: function (lead) {
+      var cfg = window.BYTES_SYNC_CONFIG || {};
+      if (!Bytes.firebase.requiresAuth() || cfg.enforceOwnership === false) return true;
+      if (selectors.isAdmin()) return true;
+      return !!lead && lead.owner === selectors.currentOwner();
     },
 
     /** ¿Este lead entra en el alcance actual? */
@@ -314,6 +373,7 @@ window.Bytes = window.Bytes || {};
     init: init,
     getState: getState,
     subscribe: subscribe,
+    onError: onError,
     applyRemote: applyRemote,
     actions: actions,
     selectors: selectors

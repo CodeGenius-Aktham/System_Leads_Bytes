@@ -80,13 +80,19 @@
     }
 
     function statusSwitch(lead) {
-      return h('div', { class: 'status-switch', role: 'group', 'aria-label': 'Cambiar estado del lead' },
+      var editable = Bytes.store.selectors.canEdit(lead);
+      return h('div', {
+        class: 'status-switch' + (editable ? '' : ' is-locked'),
+        role: 'group',
+        'aria-label': editable ? 'Cambiar estado del lead' : 'Estado del lead (solo lectura)'
+      },
         Bytes.data.STATUSES.map(function (status) {
           var current = lead.status === status.id;
           return h('button', {
             class: 'status-opt' + (current ? ' is-current' : ''),
             type: 'button',
-            title: status.description,
+            disabled: !editable,
+            title: editable ? status.description : 'Asignado a ' + (lead.owner || 'otra persona'),
             'aria-pressed': current ? 'true' : 'false',
             dataset: { lead: lead.id, status: status.id }
           },
@@ -170,7 +176,12 @@
         /* ---------- Selector rápido de estado ---------- */
         h('div', { class: 'detail-block' },
           h('span', { class: 'detail-block__label', text: 'Estado del lead' }),
-          statusSwitch(lead)
+          statusSwitch(lead),
+          Bytes.store.selectors.canEdit(lead) ? null : h('p', { class: 'locked-note' },
+            icon('lock'),
+            h('span', { text: 'Asignado a ' + (lead.owner || 'otra persona') +
+                              '. Solo esa cuenta puede cambiar el estado.' })
+          )
         ),
 
         /* ---------- Mensaje de inicio (el que abre WhatsApp) ---------- */

@@ -39,7 +39,7 @@ System_Leads_Bytes/
 │   └── components.css              # Carpetas, filtros, lista, ficha, KPIs, Kanban
 └── src/
     ├── main.js                     # Bootstrap: init del store + suscripción de vistas
-    ├── config.js                   # Configuración de sincronización (Firebase)
+    ├── config.js                   # Configuración: Firebase, sesión, permisos, admins
     ├── data/
     │   └── leads.js                # STATUSES, SECTORS y LEADS (vacío)
     ├── store/
@@ -373,6 +373,71 @@ la cabecera, que es declarativo y sólo alimenta la autoría.
 
 ---
 
+## Cada uno toca solo sus leads
+
+El reparto de la investigación asigna 20 leads a cada responsable. Con
+`enforceOwnership: true` en `src/config.js`, **nadie puede cambiar el estado
+de un lead que no le corresponde**.
+
+Son dos capas, y la de abajo es la que manda:
+
+| Capa | Qué hace | Se puede saltear |
+|------|----------|------------------|
+| Interfaz | Deshabilita el selector de estado y dice a quién está asignado | Sí (consola del navegador) |
+| Reglas de Firestore | Rechaza la escritura con `PERMISSION_DENIED` | No |
+
+Si una escritura llega a ser rechazada por el servidor, el estado local
+**vuelve atrás** y se avisa el motivo. Sin eso la pantalla mostraría un cambio
+que nunca se guardó: el criterio de última escritura hace que el eco remoto,
+más viejo, no la corrija.
+
+Las cuentas de `admins` (supervisión) editan los 80.
+
+### Cómo lo sabe Firestore
+
+Las reglas no conocen el reparto, así que vive en una colección propia:
+
+```
+leadOwners/{leadId} = { owner: 'Jorge' }
+```
+
+Se siembra **una sola vez** y después queda inmutable (`allow write: if false`).
+Al escribir un estado, la regla consulta esa asignación:
+
+```javascript
+duenoDe(leadId) == nombre()   // nombre() mapea el correo de la cuenta
+```
+
+Es una colección **nueva**: no modifica ni un byte de `leadStatus`, así que los
+estados ya registrados quedan intactos.
+
+> Si falta la asignación de un lead, el `get()` de la regla falla y ese lead
+> queda sin poder editarse. Hay que sembrar los 80.
+
+### Archivos
+
+```
+firestore/
+├── leadOwners.json        # las 80 asignaciones (lead -> responsable)
+├── seed-leadOwners.js     # siembra la colección desde la consola del navegador
+├── rules-seed.txt         # reglas TEMPORALES, solo para sembrar
+└── rules.txt              # reglas definitivas
+```
+
+### Orden de aplicación
+
+1. Publicar `firestore/rules-seed.txt`
+2. Iniciar sesión en el sistema y correr `firestore/seed-leadOwners.js` en la
+   consola del navegador
+3. Completar en `firestore/rules.txt` el mapa de correos y la lista de admins
+4. Publicar `firestore/rules.txt`
+5. Completar `admins` en `src/config.js` con los mismos correos y desplegar
+
+> El paso 5 importa: si las dos listas no coinciden, la interfaz va a permitir
+> algo que el servidor después rechaza.
+
+---
+
 ## Solo mis leads
 
 El reparto de la investigación asigna 20 leads a cada responsable (campo
@@ -453,8 +518,8 @@ minutos después de un deploy. Para evitarlo, `index.html` referencia sus
 recursos con un parámetro de versión:
 
 ```html
-<link rel="stylesheet" href="styles/base.css?v=20260916g" />
-<script src="src/main.js?v=20260916g"></script>
+<link rel="stylesheet" href="styles/base.css?v=20260916h" />
+<script src="src/main.js?v=20260916h"></script>
 ```
 
 **Al publicar un cambio, subí ese identificador** (por ejemplo a `20260917a`)

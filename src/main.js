@@ -35,6 +35,9 @@
 
     store.subscribe(render);
 
+    // Rechazos del servidor y permisos: se avisan al usuario.
+    store.onError(function (message) { Bytes.dom.toast(message, 'lock'); });
+
     /* ------------------------- Puerta de entrada -------------------------
        Con Firebase configurado, nada se muestra ni se sincroniza hasta que
        haya sesión. Sin configurar, el sistema abre directo en modo local. */
