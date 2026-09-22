@@ -1079,7 +1079,7 @@ window.Bytes = window.Bytes || {};
       instagram: "@avaadorestudio",
       website: null,
       status: 'sin_contactar',
-      owner: "Thiago",
+      owner: "Tiago",
       activity: "Peluquería/Centro de estética",
       message: "Hola, vi el Instagram de AVA ADORE y me encantaron sus diseños. Noté que no cuentan con página web propia, ¿les interesaría tener una para mostrar su trabajo y recibir más reservas?",
       updatedAt: "2026-09-16",
