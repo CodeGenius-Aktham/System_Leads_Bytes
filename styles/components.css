@@ -233,6 +233,8 @@
   background: var(--paper);
 }
 .phone-row__icon { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: var(--white); border: 1px solid var(--line-200); color: var(--ink-700); }
+.phone-row.is-missing { border-style: dashed; }
+.phone-row.is-missing .phone-row__value { color: var(--ink-400); font-weight: 600; }
 .phone-row__value { font-size: 15px; font-weight: 700; letter-spacing: .2px; font-variant-numeric: tabular-nums; }
 .phone-row__hint { font-size: 11px; color: var(--ink-500); }
 .copy-btn {

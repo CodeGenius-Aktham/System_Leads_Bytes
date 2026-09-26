@@ -133,15 +133,15 @@
         /* ---------- Teléfono ---------- */
         h('div', { class: 'detail-block' },
           h('span', { class: 'detail-block__label', text: 'Teléfono de contacto' }),
-          h('div', { class: 'phone-row' },
+          h('div', { class: 'phone-row' + (lead.phone ? '' : ' is-missing') },
             h('span', { class: 'phone-row__icon' }, icon('phone')),
             h('div', null,
-              h('div', { class: 'phone-row__value', text: lead.phone }),
+              h('div', { class: 'phone-row__value', text: lead.phone || 'Sin teléfono registrado' }),
               h('div', { class: 'phone-row__hint', text: lead.address || 'Sin dirección registrada' })
             ),
-            h('button', { class: 'copy-btn', type: 'button', dataset: { value: lead.phone } },
+            lead.phone ? h('button', { class: 'copy-btn', type: 'button', dataset: { value: lead.phone } },
               icon('copy'), h('span', { text: 'Copiar' })
-            )
+            ) : null
           )
         ),
 
@@ -151,13 +151,14 @@
           h('div', { class: 'action-grid' },
             actionButton({
               ch: 'wa', icon: 'whatsapp', label: 'WhatsApp',
-              sub: lead.message ? 'Mensaje de inicio listo' : 'Mensaje genérico',
-              title: fmt.waMessage(lead),
-              href: fmt.waLink(lead)
+              sub: !lead.phone ? 'No tiene teléfono'
+                   : lead.message ? 'Mensaje de inicio listo' : 'Mensaje genérico',
+              title: lead.phone ? fmt.waMessage(lead) : 'Sin teléfono no se puede abrir el chat',
+              href: lead.phone ? fmt.waLink(lead) : null
             }),
             actionButton({
               ch: 'maps', icon: 'mapPin', label: 'Google Maps',
-              sub: lead.address || 'Buscar ubicación',
+              sub: lead.address || 'Buscar por nombre y ciudad',
               href: fmt.mapsLink(lead)
             }),
             actionButton({

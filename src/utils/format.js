@@ -33,6 +33,7 @@ window.Bytes = window.Bytes || {};
   }
   function waLink(lead) {
     var phone = digitsOnly(lead.phone);
+    if (!phone) return null;          // sin número no hay chat que abrir
     return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(waMessage(lead));
   }
 

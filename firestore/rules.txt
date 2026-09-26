@@ -12,7 +12,7 @@
 // ANTES DE PUBLICAR:
 //   1. Completar el mapa de nombres() con los correos reales. El nombre
 //      debe coincidir EXACTO con el campo `owner` de los leads
-//      (Jesus, Moises, Jorge, Thiago).
+//      (Jesus, Moises, Jorge, Tiago).
 //   2. Completar admins() con los correos de supervisión, y que coincidan
 //      con la lista `admins` de src/config.js.
 //   3. Haber sembrado `leadOwners`. Si falta la asignación de un lead, el
@@ -28,7 +28,7 @@ service cloud.firestore {
         'jesus@bytestechnology.com':  'Jesus',
         'moises@bytestechnology.com': 'Moises',
         'jorge@bytestechnology.com':  'Jorge',
-        'thiago@bytestechnology.com': 'Thiago'
+        'tiago@bytestechnology.com':  'Tiago'
       }.get(request.auth.token.email, '');
     }
 

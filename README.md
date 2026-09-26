@@ -237,58 +237,57 @@ store, por lo que cambiar un estado actualiza los contadores al instante.
 `src/data/leads.js` expone `STATUSES`, `SECTORS` y `LEADS`. Esta capa simula la
 respuesta de la API: sustituirla por un `fetch` no requiere tocar la interfaz.
 
-**80 prospectos** cargados desde `prospectos.pdf`, todos en estado
-`sin_contactar` y todos sin página web — que es justamente la premisa comercial
-de la investigación.
+**119 prospectos** cargados desde `Leads_Paginas_Web_Vendedores.pdf`
+(septiembre 2026): negocios de Venezuela y Colombia con Instagram y sin página
+web propia. Todos arrancan en `sin_contactar` y con `website: null`, que es la
+premisa comercial de la investigación.
 
-| Rubro                    | Leads | Actividades del origen                                          |
-|--------------------------|------:|-----------------------------------------------------------------|
-| Estudios de tatuajes     |    42 | Estudio de tatuajes · Tienda de piercings y tatuajes · Tatuador |
-| Barberías                |    25 | Barbería                                                        |
-| Estética y peluquería    |     6 | Centro de estética · Peluquería · Spa de uñas                   |
-| Manicura y uñas          |     6 | Salón de manicura y pedicura · Spa/Manicura                     |
-| Pastelería y repostería  |     1 | Pastelería/Repostería                                           |
+| Rubro | Leads |
+|---|---:|
+| Gastronomía | 37 |
+| Comercio y servicios | 21 |
+| Barberías y peluquerías | 19 |
+| Salud dental y óptica | 14 |
+| Estética y spa | 8 |
+| Gimnasios y deporte | 8 |
+| Veterinarias y mascotas | 8 |
+| Eventos | 4 |
 
-Reparto por responsable: **Jesus 20 · Moises 20 · Jorge 20 · Thiago 20**.
-Países: Colombia (49, `+57`) y Venezuela (31, `+58`).
+Reparto: **Moises 30 · Jorge 30 · Tiago 30 · Jesus 29**.
+Países: Venezuela 60, Colombia 59.
 
-Tres campos propios de esta carga se suman a la forma base del lead:
+El origen trae 110 rubros distintos para 119 negocios, demasiado granular para
+carpetas útiles. Se agrupan en los 8 sectores de arriba y **el rubro textual se
+conserva íntegro** en `activity`, visible en la ficha.
 
-| Campo      | Uso                                                                  |
-|------------|----------------------------------------------------------------------|
-| `owner`    | Responsable asignado en la investigación                             |
-| `activity` | Actividad textual del negocio, tal como figura en el origen          |
-| `message`  | Mensaje de inicio redactado para ese prospecto; lo usa el botón de WhatsApp |
+### Campos del lead
 
-### Calidad de los datos
+| Campo | Uso |
+|---|---|
+| `owner` | Vendedor asignado en la investigación |
+| `activity` | Rubro textual, tal como figura en el origen |
+| `message` | Mensaje de inicio propio. **Null en este set**: el botón de WhatsApp usa el genérico `Hola! Hablo con [negocio]` |
+| `country` | Venezuela o Colombia |
+| `note` | Qué dato falta, cuando el origen lo marcó incompleto |
 
-Un registro llegó con datos incompletos desde el origen y se cargó **tal cual**,
-sin inventar nada:
+### Registros incompletos
 
-- **Inked Tatto Studio** (Bucaramanga): en la columna de Instagram trae un post
-  (`post/Ch3AB6rp0MY`) en lugar de un usuario, y el teléfono `+57 76945564`
-  tiene 10 dígitos en vez de los 12 habituales de un móvil colombiano, así que
-  el enlace de WhatsApp probablemente no funcione. Conviene verificarlo.
+El origen marca 22 registros con algún dato faltante. Se cargan igual, sin
+inventar nada, y la interfaz se adapta:
 
-```js
-// forma de cada lead
-{
-  id:        'inm-01',                 // identificador único
-  sectorId:  'inmobiliarias',          // debe existir en SECTORS
-  name:      'Inmobiliaria Del Sur',   // nombre del negocio
-  phone:     '+54 9 11 4521 8890',     // se normaliza para wa.me
-  address:   'Av. Rivadavia 4820',
-  city:      'Buenos Aires, Argentina',
-  mapsUrl:   null,                     // null → búsqueda por nombre + dirección
-  instagram: '@inmodelsur',            // null → botón de Instagram inactivo
-  website:   'inmodelsur.com.ar',      // null → "No tiene página web"
-  status:    'sin_contactar',          // sin_contactar | contactado | cliente | rechazado
-  updatedAt: '2026-09-10',             // ISO corto (YYYY-MM-DD)
-  note:      'Notas de la investigación.'
-}
-```
+| Falta | Leads | Qué hace el sistema |
+|---|---:|---|
+| Teléfono | 6 | Botón de WhatsApp desactivado; la ficha dice "Sin teléfono registrado" |
+| Instagram | 9 | Botón de Instagram desactivado |
+| Dirección | 9 | Google Maps busca por nombre y ciudad, que sí están |
 
-En cuanto un lead tenga un `sectorId`, la carpeta de ese rubro aparece sola.
+El faltante queda anotado en `note` y se muestra en la ficha.
+
+### Set anterior
+
+Este set reemplaza la investigación de 80 prospectos de septiembre. Su respaldo
+completo —estado, autoría y mensajes— quedó en el PDF del 26/09/2026, junto con
+un JSON restaurable.
 
 ---
 
@@ -518,8 +517,8 @@ minutos después de un deploy. Para evitarlo, `index.html` referencia sus
 recursos con un parámetro de versión:
 
 ```html
-<link rel="stylesheet" href="styles/base.css?v=20260916h" />
-<script src="src/main.js?v=20260916h"></script>
+<link rel="stylesheet" href="styles/base.css?v=20260926a" />
+<script src="src/main.js?v=20260926a"></script>
 ```
 
 **Al publicar un cambio, subí ese identificador** (por ejemplo a `20260917a`)
